@@ -8,7 +8,7 @@ This tool is used to convert rpk file to Anki apkg.
 
 
 # 下载 & 使用
-前往 https://github.com/ssqyang/rpk2apkg/releases　下载已经打包好的程序。
+前往 https://github.com/ssqyang2/rpk2apkg/releases　下载已经打包好的程序。
 
 本项目完全开源，如果不放心，可以或者按下面的方法自行打包。
 
