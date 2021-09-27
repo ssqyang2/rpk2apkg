@@ -2,7 +2,9 @@
 
 This tool is used to convert rpk file to Anki apkg.
 
-如果遇到任何问题，请发起issue，并描述情况。如果转换rpk出现问题，请将文件发到邮箱 `ssqyang [AT] outlook.com`，我会debug并修复问题。
+如果遇到任何问题，请发起issue，并描述情况。如果转换rpk出现问题，请将文件发到邮箱 `ssqyang2 [AT] outlook.com`，我会debug并修复问题。
+
+（我是 ssqyang, 用同学电脑注册github，结果账号找不到了。。所以以后维护都在这个repo里进行了~）
 
 
 # 下载 & 使用
