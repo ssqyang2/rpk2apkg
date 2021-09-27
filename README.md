@@ -28,9 +28,9 @@ To pack the .py files into executable file, please execute the following command
 pip install pyinstaller
 # -w will hide the console window
 # Windows
-pyinstaller -w -F main.py --add-data "static/*;./static" --workpath temp --distpath . -n RpkConverter.exe
+pyinstaller -w -F main.py --add-data "static/*;./static" -n RpkConverter.exe
 # Mac
-pyinstaller -w -F main.py --add-data "static/*:./static" --workpath temp --distpath . -n RpkConverter
+pyinstaller -w -F main.py --add-data "static/*:./static" -n RpkConverter
 ```
 
 The pyinstaller will generate /temp directory to store temp files, which can be deleted manually.
