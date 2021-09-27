@@ -93,21 +93,21 @@ class AnkiCollectionWriter:
 
                 # handle double-sided cards
                 if len(row['front_back'].strip()) > 0:
-                    model = deepcopy(BASE_MODEL)
-                    model['name'] = row['name'] + "_back"
-                    model['css'] += row['css_back']
+                    model2 = deepcopy(BASE_MODEL)
+                    model2['name'] = row['name'] + "_back"
+                    model2['css'] += row['css_back']
                     # XXX: use N+1 as back's model id
-                    model['id'] = str(idx + 1)
+                    model2['id'] = str(idx + 1)
                     for ord, f in enumerate(row['fields']):
                         field = deepcopy(BASE_FIELD)
                         field['name'] = f['name']
                         field['ord'] = ord
-                        model['flds'].append(field)
+                        model2['flds'].append(field)
                     tmpl = deepcopy(BASE_TMPL)
                     tmpl['qfmt'] = self.process_tmpl(row['front_back'])
                     tmpl['afmt'] = self.process_tmpl(row['back_back'])
-                    model['tmpls'].append(tmpl)
-                    models[str(idx + 1)] = model
+                    model2['tmpls'].append(tmpl)
+                    models[str(idx + 1)] = model2
 
             model['id'] = str(idx)
             models[str(idx)] = model

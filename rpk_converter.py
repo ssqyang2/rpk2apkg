@@ -49,7 +49,7 @@ class RpkConverter:
 
     def load_rpk_json(self):
         logging.info("Loading rpk json")
-        with open(f"{self.rpk_tmp_dir}/data/cards.json") as f:
+        with open(f"{self.rpk_tmp_dir}/data/cards.json", encoding="utf-8") as f:
             obj = json.load(f)
 
         self.cards_df = pd.DataFrame(obj)
@@ -57,13 +57,13 @@ class RpkConverter:
 
         # df[df['cid'] == df.iloc[0]['related_cid']]
 
-        with open(f"{self.rpk_tmp_dir}/data/cats.json") as f:
+        with open(f"{self.rpk_tmp_dir}/data/cats.json", encoding="utf-8") as f:
             obj = json.load(f)
 
         self.carts_df = pd.DataFrame(obj)
         self.carts_df.set_index("aid", inplace=True)
 
-        with open(f"{self.rpk_tmp_dir}/data/tpls.json") as f:
+        with open(f"{self.rpk_tmp_dir}/data/tpls.json", encoding="utf-8") as f:
             obj = json.load(f)
 
         self.tpls_df = pd.DataFrame(obj)
@@ -80,7 +80,7 @@ class RpkConverter:
 
     def convert_media_files(self):
         logging.info("Converting media files")
-        media_list = os.listdir(self.media_files_path)
+        media_list = os.listdir(self.media_files_path) if os.path.exists(self.media_files_path) else []
         media_dict = {}
         for i in range(len(media_list)):
             filename = media_list[i]
@@ -93,10 +93,11 @@ class RpkConverter:
         zipf = zipfile.ZipFile(f"{self.out_dir}/{self.filename}.apkg", 'w', zipfile.ZIP_DEFLATED)
         zipf.write(f"{self.apkg_tmp_dir}/media", "media")
         zipf.write(self.sqlite_path, "collection.anki2")
-        for media_file in os.listdir(self.media_files_path):
+        media_list = os.listdir(self.media_files_path) if os.path.exists(self.media_files_path) else []
+        for media_file in media_list:
             zipf.write(f"{self.media_files_path}/{media_file}", media_file)
         zipf.close()
-        done_message = f"The conversion is done. The output file is saved in {self.out_dir}/{self.filename}.apkg."
+        done_message = f"转换成功！输出文件在 {self.out_dir}/{self.filename}.apkg \n 你可以选择下一个文件进行转换。"
         logging.info(done_message)
         print(done_message)
 

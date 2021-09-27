@@ -19,6 +19,7 @@ def convert_to_apkg_format(f):
     if not f:
         return ""
     f = f.replace("[audio:aws_", "[sound:")
+    f = f.replace("[audio:", "[sound:")
     f = re.sub("\[image:(.*?)\]", r"<img src=\1>", f)
     f = re.sub("__(.*?)__", r"{{c1::\1}}", f)
     return f.strip()
