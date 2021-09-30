@@ -66,7 +66,7 @@ class AnkiCollectionWriter:
 
     @staticmethod
     def process_tmpl(tmpl: str):
-        return tmpl.replace("{{@", "{{")
+        return str(tmpl).replace("{{@", "{{")
 
     def get_models(self):
         models = {}

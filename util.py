@@ -18,6 +18,7 @@ def is_capital_letter(char):
 def convert_to_apkg_format(f):
     if not f:
         return ""
+    f = str(f)
     f = f.replace("[audio:aws_", "[sound:")
     f = f.replace("[audio:", "[sound:")
     f = re.sub("\[image:(.*?)\]", r"<img src=\1>", f)
