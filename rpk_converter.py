@@ -4,8 +4,7 @@ import os
 import shutil
 import time
 import zipfile
-
-import pandas as pd
+from collections import OrderedDict
 
 from anki_collection_writer import AnkiCollectionWriter
 
@@ -52,22 +51,19 @@ class RpkConverter:
         with open(f"{self.rpk_tmp_dir}/data/cards.json", encoding="utf-8") as f:
             obj = json.load(f)
 
-        self.cards_df = pd.DataFrame(obj)
-        self.cards_df.set_index("cid", inplace=True)
+        self.cards_df = OrderedDict({x["cid"]: x for x in obj})
 
         # df[df['cid'] == df.iloc[0]['related_cid']]
 
         with open(f"{self.rpk_tmp_dir}/data/cats.json", encoding="utf-8") as f:
             obj = json.load(f)
 
-        self.carts_df = pd.DataFrame(obj)
-        self.carts_df.set_index("aid", inplace=True)
+        self.carts_df = OrderedDict({x["aid"]: x for x in obj})
 
         with open(f"{self.rpk_tmp_dir}/data/tpls.json", encoding="utf-8") as f:
             obj = json.load(f)
 
-        self.tpls_df = pd.DataFrame(obj)
-        self.tpls_df.set_index("tid", inplace=True)
+        self.tpls_df = OrderedDict({x["tid"]: x for x in obj})
 
     def write_to_sqlite(self):
         logging.info("Writing to sqlite3")

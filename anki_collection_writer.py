@@ -1,23 +1,22 @@
 import json
 import sqlite3
+from collections import OrderedDict
 from copy import deepcopy
-
-import pandas as pd
 
 from anki_base import *
 from misc import *
 from util import *
 
-logger = get_logger("AnkiCollectionWriter")
+# logger = get_logger("AnkiCollectionWriter")
 
 
 class AnkiCollectionWriter:
     def __init__(self,
                  root_deck_name: str,
                  collection_path: str,
-                 cats_df: pd.DataFrame,
-                 cards_df: pd.DataFrame,
-                 tpls_df: pd.DataFrame
+                 cats_df: OrderedDict,
+                 cards_df: OrderedDict,
+                 tpls_df: OrderedDict
                  ):
         assert os.path.exists(collection_path), f"File not exists: {collection_path}"
         self.con = sqlite3.connect(collection_path)
@@ -48,7 +47,7 @@ class AnkiCollectionWriter:
     def get_decks(self):
         def get_deck_name(idx, child_name=None):
             """recursively build the deck name"""
-            row = self.cats_df.loc[idx]
+            row = self.cats_df[idx]
             deck_name = row['name'] if child_name is None else f"{row['name']}::{child_name}"
             if row['pid'] == 0:
                 return self.root_deck_name + "::" + deck_name
@@ -56,7 +55,7 @@ class AnkiCollectionWriter:
                 return get_deck_name(row['pid'], deck_name)
 
         decks = {}
-        for idx, row in self.cats_df.iterrows():
+        for idx, row in self.cats_df.items():
             deck_info = deepcopy(BASE_DECK)
             deck_info['id'] = idx
             deck_info['name'] = get_deck_name(idx)
@@ -70,7 +69,7 @@ class AnkiCollectionWriter:
 
     def get_models(self):
         models = {}
-        for idx, row in self.tpls_df.iterrows():
+        for idx, row in self.tpls_df.items():
             if "选择" in row['name']:
                 model = self.load_replace_model("select")
             else:
@@ -172,9 +171,9 @@ class AnkiCollectionWriter:
 
         cnt = 0
         with self.con as c:
-            for idx, row in self.cards_df.iterrows():
+            for idx, row in self.cards_df.items():
                 assert row['aid'] != 0, f"Invalid deck for card: {row['data']}"
-                logger.info(f'Writing card {row}')
+                # logger.info(f'Writing card {row}')
                 cnt += 1
                 tid = row['tid']
                 model_id = tid

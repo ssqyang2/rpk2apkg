@@ -21,12 +21,12 @@ class App:
         self.status = ""
         # layout
         Label(self.root, text="选择从记乎导出的rpk文件").grid(row=0, column=0)
-        Entry(self.root, textvariable=self.rpk_file_path).grid(row=0, column=1)
+        Entry(self.root, textvariable=self.rpk_file_path, width=100).grid(row=0, column=1)
         Button(self.root, text="选择", command=self.select_rpk_file_path).grid(row=0, column=2)
         Label(self.root, text="选择输出apkg的文件夹").grid(row=1, column=0)
-        Entry(self.root, textvariable=self.out_dir).grid(row=1, column=1)
+        Entry(self.root, textvariable=self.out_dir, width=100).grid(row=1, column=1)
         Button(self.root, text="选择", command=self.select_out_dir).grid(row=1, column=2)
-        self.run_button = Button(self.root, text="开始转换", width=40, command=self.touch_button)
+        self.run_button = Button(self.root, text="开始转换", width=100, command=self.touch_button)
         self.run_button.grid(row=2, column=0, columnspan=3)
         self.root.grid_rowconfigure(0, minsize=50)
         self.root.grid_rowconfigure(1, minsize=50)
@@ -35,7 +35,7 @@ class App:
         screenwidth = self.root.winfo_screenwidth()
         screenheight = self.root.winfo_screenheight()
         self.root.geometry('+%d+%d' % ((screenwidth - 400) / 2, (screenheight - 100) / 2))
-        self.root.resizable(width=False, height=False)
+        self.root.resizable(width=True, height=True)
         # mainloop
         messagebox.showinfo(title, "这个工具用于将rpk文件转换为Anki的apkg文件，用于在anki中学习")
         self.root.mainloop()
@@ -81,14 +81,14 @@ class App:
             converter.convert_media_files()
             self.status = "正在生成apkg文件(打包为apkg)"
             converter.pack_apkg()
-            messagebox.showinfo("转换成功！请打开 " + out_dir + " 查看生成的apkg文件")
+            messagebox.showinfo(self.title, "转换成功！请打开 " + out_dir + " 查看生成的apkg文件")
         except Exception as e:
             messagebox.showerror(title, "**ERROR**\n" + str(
                 e) + "\n\n To check the complete traceback error log, please open the console.")
             sys.stderr.write(traceback.format_exc())
         finally:
             self.status = "清除临时文件"
-            # converter.clear_tmp_files()
+            converter.clear_tmp_files()
             # message_stdout.send_message()
             self.run_button.config(text="run", state="normal")
 
