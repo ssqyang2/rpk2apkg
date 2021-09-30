@@ -81,6 +81,7 @@ class App:
             converter.convert_media_files()
             self.status = "正在生成apkg文件(打包为apkg)"
             converter.pack_apkg()
+            messagebox.showinfo("转换成功！请打开 " + out_dir + " 查看生成的apkg文件")
         except Exception as e:
             messagebox.showerror(title, "**ERROR**\n" + str(
                 e) + "\n\n To check the complete traceback error log, please open the console.")
