@@ -34,7 +34,7 @@ class App:
         # window resize
         screenwidth = self.root.winfo_screenwidth()
         screenheight = self.root.winfo_screenheight()
-        self.root.geometry('+%d+%d' % ((screenwidth - 400) / 2, (screenheight - 100) / 2))
+        self.root.geometry('+%d+%d' % ((screenwidth - 1000) / 2, (screenheight - 300) / 2))
         self.root.resizable(width=True, height=True)
         # mainloop
         messagebox.showinfo(title, "这个工具用于将rpk文件转换为Anki的apkg文件，用于在anki中学习")
@@ -77,6 +77,9 @@ class App:
             converter.load_rpk_json()
             self.status = "正在生成apkg文件(写入sqlite)"
             converter.write_to_sqlite()
+            def on_progress(idx, count):
+                self.status = f'正在下载音频、图片文件({idx}/{count})'
+            converter.download_resource_files(on_progress)
             self.status = "正在生成apkg文件(转换media文件)"
             converter.convert_media_files()
             self.status = "正在生成apkg文件(打包为apkg)"
@@ -88,7 +91,7 @@ class App:
             sys.stderr.write(traceback.format_exc())
         finally:
             self.status = "清除临时文件"
-            converter.clear_tmp_files()
+            # converter.clear_tmp_files()
             # message_stdout.send_message()
             self.run_button.config(text="run", state="normal")
 

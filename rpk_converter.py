@@ -5,11 +5,25 @@ import shutil
 import time
 import zipfile
 from collections import OrderedDict
+import requests
+from multiprocessing.pool import ThreadPool
 
 from anki_collection_writer import AnkiCollectionWriter
 
 LOG_FORMAT = "%(asctime)s - %(levelname)s - %(message)s"
 logging.basicConfig(level=logging.INFO, format=LOG_FORMAT)
+
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
+DOWNLOAD_THREADS = 20
+web_client = requests.Session()
+retry = Retry(total=3)
+adapter = HTTPAdapter(pool_connections=DOWNLOAD_THREADS, pool_maxsize=DOWNLOAD_THREADS, max_retries=retry)
+web_client.mount('http://', adapter)
+web_client.mount('https://', adapter)
+
 
 
 class RpkConverter:
@@ -24,7 +38,7 @@ class RpkConverter:
 
         self.out_dir = out_dir
         # temp files directory labeled for concurrent
-        local_time = time.strftime("%S%M%H%d%m%y", time.localtime())
+        local_time = time.strftime("%y%m%d%H%M%S", time.localtime())
         self.tmp_dir = f"{out_dir}/temp{local_time}"
         self.rpk_tmp_dir = f"{self.tmp_dir}/rpk"
         self.apkg_tmp_dir = f"{self.tmp_dir}/apkg"
@@ -62,8 +76,15 @@ class RpkConverter:
 
         with open(f"{self.rpk_tmp_dir}/data/tpls.json", encoding="utf-8") as f:
             obj = json.load(f)
-
         self.tpls_df = OrderedDict({x["tid"]: x for x in obj})
+
+        resources_file = f"{self.rpk_tmp_dir}/data/resources.json"
+        if os.path.exists(resources_file):
+            with open(resources_file, encoding="utf-8") as f:
+                obj = json.load(f)
+            self.resources_df = OrderedDict({x["id"]: x for x in obj})
+        else:
+            self.resources_df = OrderedDict()
 
     def write_to_sqlite(self):
         logging.info("Writing to sqlite3")
@@ -73,6 +94,35 @@ class RpkConverter:
 
         cw.insert_col_table()
         cw.insert_notes_table()
+
+    def download_resource_files(self, progress_callback):
+        ''' progress_callback: (currentCount, totalCount) '''
+        os.makedirs(f'{self.rpk_tmp_dir}/resources/', exist_ok=True)
+        pool = ThreadPool(DOWNLOAD_THREADS)
+        futures = []
+
+        def download_file(name, url):
+            with web_client.get(url, stream=True) as r:
+                r.raise_for_status()
+                with open(f'{self.rpk_tmp_dir}/resources/{name}', 'wb') as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        # If you have chunk encoded response uncomment if
+                        # and set chunk_size parameter to None.
+                        # if chunk:
+                        f.write(chunk)
+
+        for idx, row in self.resources_df.items():
+            name = row['name']
+            url = row['url']
+            type = row['type']
+            if type != 1:
+                # type = 1, TTS resources, skip
+                f = pool.apply_async(download_file, (name, url))
+                futures.append(f)
+
+        for idx, f in enumerate(futures):
+            f.get()
+            progress_callback(idx, len(futures))
 
     def convert_media_files(self):
         logging.info("Converting media files")
