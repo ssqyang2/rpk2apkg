@@ -31,6 +31,7 @@ pip install pyinstaller
 pyinstaller -w -F main.py --add-data "static/*;./static" -n RpkConverter.exe
 # Mac
 pyinstaller -w -F main.py --add-data "static/*:./static" -n RpkConverter
+bash -c "cd dist; rm RpkConverter-MacOS.zip; zip -r RpkConverter-MacOS.zip RpkConverter.app"
 ```
 
 The pyinstaller will generate /temp directory to store temp files, which can be deleted manually.
