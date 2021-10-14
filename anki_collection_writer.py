@@ -135,32 +135,31 @@ class AnkiCollectionWriter:
 
             c.commit()
 
-    def insert_fields_to_notes(self, fields_dict, model):
+    def insert_fields_to_notes(self, idx, fields_dict, model):
         fields = []
         # insert fields according to static/anki-awesome-select.json
         if model['name'] == "AwesomeSelect-3.x":
+            fields = [
+                str(idx), # id
+                convert_to_apkg_format(fields_dict.get("question")) # question
+            ]
+            # options
+            options = []
             for field_name in fields_dict.keys():
                 f = convert_to_apkg_format(fields_dict.get(field_name))
-                if "question" in field_name:
-                    # append id
-                    fields.append("Question")
-                    fields.append(f)
-                    options = ""
-                elif is_capital_letter(field_name):
-                    options = options + f + "||"
-                elif "answer" in field_name:
-                    fields.append(options[:-2])
-                    answer_list = list(f)
-                    answers = ""
-                    for answer in answer_list:
-                        answers = answers + str(ord(answer) - ord("A") + 1) + "||"
-                    fields.append(answers[:-2])
-                    notes = ""
-                else:
-                    notes = notes + f + "\n"
-            fields.append(notes[:-1])
-        # insert fields by default
+                if is_capital_letter(field_name):
+                    options.append(f)
+            fields.append("||".join(filter(lambda x: len(x) > 0, options)))
+
+            # answer
+            # convert to 1, 2, 3
+            answer_list = [str(ord(x) - ord("A") + 1) for x in fields_dict.get("answer")]
+            fields.append("||".join(answer_list))
+
+            # notes
+            fields.append(convert_to_apkg_format(fields_dict.get("explain")))
         else:
+            # insert fields by default
             for field_name in [x['name'] for x in model['flds']]:
                 f = convert_to_apkg_format(fields_dict.get(field_name))
                 fields.append(f)
@@ -172,7 +171,10 @@ class AnkiCollectionWriter:
         cnt = 0
         with self.con as c:
             for idx, row in self.cards_df.items():
-                assert row['aid'] != 0, f"Invalid deck for card: {row['data']}"
+                # 跳过“未分类”卡片
+                if row['aid'] == 0:
+                    continue
+                # assert row['aid'] != 0, f"Invalid deck for card: {row['data']}"
                 # logger.info(f'Writing card {row}')
                 cnt += 1
                 tid = row['tid']
@@ -181,7 +183,7 @@ class AnkiCollectionWriter:
                     model_id += 1
                 model = models[str(model_id)]
                 fields_dict = row['data']
-                fields = self.insert_fields_to_notes(fields_dict, model)
+                fields = self.insert_fields_to_notes(idx, fields_dict, model)
 
                 c.execute("INSERT INTO notes (id, guid, mid, mod, usn, tags, flds, sfld, csum, flags, data)"
                           " values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
