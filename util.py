@@ -19,9 +19,11 @@ def convert_to_apkg_format(f):
     if not f:
         return ""
     f = str(f)
-    f = f.replace("[audio:aws_", "[sound:")
-    f = f.replace("[audio:", "[sound:")
-    f = re.sub("\[image:(.*?)\]", r"<img src=\1>", f)
-    f = re.sub("__([^_,]{1,8}?)__", r"{{c1::\1}}", f)
-    f = re.sub("\[hide:(.*?)\]", r"{{c1::\1}}", f)
+    f = f.replace(r"[audio:aws_", "[sound:")
+    f = f.replace(r"[audio:", "[sound:")
+    f = re.sub(r"\[image:(.*?)\]", r'<img src="\1">', f)
+    f = re.sub(r"__([^_,]{1,100}?)__", r"{{c1::\1}}", f)
+    # remove spaces in cloze
+    f = re.sub(r"{{c1::\s*(.*?)\s*}}", r"{{c1::\1}}", f)
+    f = re.sub(r"\[hide:(.*?)\]", r"{{c1::\1}}", f)
     return f.strip()
