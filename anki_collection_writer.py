@@ -37,12 +37,17 @@ class AnkiCollectionWriter:
             c.commit()
 
     def load_replace_model(self, type):
-        model_path = ""
         if type == "select":
             model_path = "static/anki-awesome-select.json"
-
-        f = open(resource_path(model_path), "r", encoding="utf-8")
-        return json.load(f)
+            with open(resource_path(model_path), "r", encoding="utf-8") as f:
+                obj = json.load(f)
+            with open(resource_path("static/anki-awesome-select-afmt.html"), "r", encoding="utf-8") as f:
+                obj['tmpls'][0]['afmt'] = f.read()
+            with open(resource_path("static/anki-awesome-select-qfmt.html"), "r", encoding="utf-8") as f:
+                obj['tmpls'][0]['qfmt'] = f.read()
+            return obj
+        else:
+            raise Exception(f"Unknown type: {type}")
 
     def get_decks(self):
         def get_deck_name(idx, child_name=None):
