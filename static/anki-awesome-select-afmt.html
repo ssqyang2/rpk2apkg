@@ -13,8 +13,17 @@
     <div id="back-tag"></div>
   </div>
   <hr>
+<div id='anwser_content' style="display: none">{{answer}}</div>
+<div id='option_content' style="display: none">{{options}}</div>
 
   <script>
+    function getAnswer() {
+      return document.getElementById("anwser_content").innerHTML;
+    }
+    function getOptions() {
+      return document.getElementById("option_content").innerHTML;
+    }
+
     function showBackOptions() {
       var _isNormalOption = isNormalOption()
       var correctClass = _isNormalOption ? 'correct' : 'correct-light'
@@ -22,7 +31,7 @@
       var shouldSelectClass = _isNormalOption ? 'should-select' : 'should-select-light'
       var optionObjs = getOptionObjs()
       var liList = ''
-      var isMulti = "{{answer}}".indexOf('||') > 0
+      var isMulti = getAnswer().indexOf('||') > 0
       for (var i in optionObjs) {
         var _optionObj = optionObjs[i]
         var _option = _optionObj.label
@@ -53,7 +62,7 @@
     }
 
     function isCorrectAnswer(optionKey) {
-      return "{{answer}}".indexOf(optionKey) > -1
+      return getAnswer().indexOf(optionKey) > -1
     }
 
     function isSelected(optionKey) {
@@ -64,7 +73,7 @@
     }
 
     function getOptionObjs() {
-      var optionArray = "{{options}}".trim().split("||")
+      var optionArray = getOptions().trim().split("||")
       var optionObjs = []
       for (var i in optionArray) {
         optionObjs.push({
@@ -102,7 +111,7 @@
 
 </div>
 
-<div id="back-footer" class="footer">v3.12</div>
+<div id="back-footer" class="footer"></div>
 
 <script>
 
@@ -140,7 +149,7 @@
   }
 
   function showAnswers() {
-    var correctAnswers = numberToAlpha("{{answer}}".trim().split('||'))
+    var correctAnswers = numberToAlpha(getAnswer().trim().split('||'))
     var yourChoice = '未选择'
     if (Persistence.isAvailable()) {
       var selectedNumbers = (Persistence.getItem('ANKI-SELECTED') || '').trim().split(',')
@@ -148,7 +157,7 @@
       Persistence.setItem('ANKI-SELECTED', '')
       var showQuestionType = Persistence.getItem('ANKI-SETTINGS-SHOW-QUESTION-TYPE') || '0'
       if (showQuestionType === '1') {
-        document.getElementById('questionType').innerHTML = "{{answer}}".indexOf('||') > -1 ? '【多选】' : '【单选】'
+        document.getElementById('questionType').innerHTML = getAnswer().indexOf('||') > -1 ? '【多选】' : '【单选】'
       } else {
         document.getElementById('questionType').innerHTML = ' '
       }
@@ -197,7 +206,7 @@
   }
 
   function updateBackFooter() {
-    document.getElementById("back-footer").insertAdjacentHTML('beforeend', '，开源地址：<a href="https://github.com/git9527/anki-awesome-select">Github</a> | <a href="https://gitee.com/git9527/anki-awesome-select">Gitee</a>');
+    document.getElementById("back-footer").insertAdjacentHTML('beforeend', '');
   }
 
   showTags()

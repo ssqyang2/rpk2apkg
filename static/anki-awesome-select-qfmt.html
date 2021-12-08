@@ -11,11 +11,13 @@
   </div>
 </div>
 
-<div id="front-footer" class="footer">v3.12</div>
+<div id="front-footer" class="footer"></div>
 
 <div id="settingsModal" class="modal">
 
 </div>
+<div id='anwser_content' style="display: none">{{answer}}</div>
+<div id='option_content' style="display: none">{{options}}</div>
 
 <script>
 
@@ -72,7 +74,7 @@
   }
 
   function getOptionObjs(randomOption) {
-    var optionArray = "{{options}}".trim().split("||")
+    var optionArray = getOptions().trim().split("||")
     var optionObjs = []
     for (var i in optionArray) {
       optionObjs.push({
@@ -95,10 +97,18 @@
     return normalOption === '1' ? 'selected' : 'selected-light'
   }
 
+  function getAnswer() {
+    return document.getElementById("anwser_content").innerHTML;
+  }
+
+  function getOptions() {
+    return document.getElementById("option_content").innerHTML;
+  }
+
   function markSelected(li) {
     var selectedKey = getSelectedKey()
     // 对应多选
-    if ("{{answer}}".indexOf('||') > 0) {
+    if (getAnswer().indexOf('||') > 0) {
       if (Persistence.isAvailable()) {
         var selectedArray = Persistence.getItem('ANKI-SELECTED') ? Persistence.getItem('ANKI-SELECTED').split(',') : []
         if (li.className.indexOf(selectedKey) > 0) {
@@ -108,7 +118,7 @@
         }
         selectedArray.sort()
         Persistence.setItem('ANKI-SELECTED', selectedArray.toString())
-        if (selectedArray.length === "{{answer}}".trim().split('||').length && autoFlip === '1') {
+        if (selectedArray.length === getAnswer().trim().split('||').length && autoFlip === '1') {
           setTimeout(function () {
             flipToBack()
           }, 100)
@@ -264,7 +274,7 @@
 
   function dealQuestionType(showQuestionType) {
     if (showQuestionType === '1') {
-      document.getElementById('questionType').innerHTML = "{{answer}}".indexOf('||') > -1 ? '【多选】' : '【单选】'
+      document.getElementById('questionType').innerHTML = getAnswer().indexOf('||') > -1 ? '【多选】' : '【单选】'
     } else {
       document.getElementById('questionType').innerHTML = ' '
     }
@@ -321,7 +331,7 @@
   }
 
   function updateFrontFooter() {
-    document.getElementById("front-footer").insertAdjacentHTML('beforeend', '，<a href="javascript:showSettings();">卡片设置</a>，开源地址：<a href="https://github.com/git9527/anki-awesome-select">Github</a> | <a href="https://gitee.com/git9527/anki-awesome-select">Gitee</a>');
+    document.getElementById("front-footer").insertAdjacentHTML('beforeend', '<a href="javascript:showSettings();">卡片设置</a>');
   }
 
   showTags()
