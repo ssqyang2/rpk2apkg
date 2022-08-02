@@ -169,7 +169,8 @@ class AnkiCollectionWriter:
 
             # answer
             # convert to 1, 2, 3
-            answer_list = [str(ord(x) - ord("A") + 1) for x in fields_dict.get("answer")]
+            answer = fields_dict.get("answer") or ""
+            answer_list = [str(ord(x) - ord("A") + 1) for x in answer]
             fields.append("||".join(answer_list))
 
             # notes
