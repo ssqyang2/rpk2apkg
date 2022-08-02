@@ -1,3 +1,4 @@
+DEFAULT_DECK_ID = 188888888
 BASE_DECK = {
     "newToday": [0, 0],
     "revToday": [0, 0],

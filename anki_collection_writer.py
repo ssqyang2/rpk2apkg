@@ -23,6 +23,12 @@ class AnkiCollectionWriter:
         self.root_deck_name = root_deck_name
         self.cats_df = cats_df
         self.cards_df = cards_df
+        # 是否插入 "未分类" deck
+        self.insert_default_deck = False
+        for idx, row in self.cards_df.items():
+            if row['aid'] == 0:
+                self.insert_default_deck = True
+                break
         self.tpls_df = tpls_df
 
     def close(self):
@@ -64,8 +70,13 @@ class AnkiCollectionWriter:
             deck_info = deepcopy(BASE_DECK)
             deck_info['id'] = idx
             deck_info['name'] = get_deck_name(idx)
-            deck_info['name'] = get_deck_name(idx)
             decks[str(idx)] = deck_info
+        if self.insert_default_deck:
+            # 添加一个默认目录
+            deck_info = deepcopy(BASE_DECK)
+            deck_info['id'] = DEFAULT_DECK_ID
+            deck_info['name'] = self.root_deck_name
+            decks[str(DEFAULT_DECK_ID)] = deck_info
         return decks
 
     @staticmethod
@@ -176,11 +187,13 @@ class AnkiCollectionWriter:
         cnt = 0
         with self.con as c:
             for idx, row in self.cards_df.items():
-                # 跳过“未分类”卡片
-                if row['aid'] == 0:
-                    continue
-                # assert row['aid'] != 0, f"Invalid deck for card: {row['data']}"
                 # logger.info(f'Writing card {row}')
+
+                # aid (cats id) as did
+                deckId = row['aid']
+                # “未分类”卡片，换成另外一个deck id
+                if deckId == 0:
+                    deckId = DEFAULT_DECK_ID
                 cnt += 1
                 tid = row['tid']
                 model_id = tid
@@ -204,7 +217,7 @@ class AnkiCollectionWriter:
                     "INSERT INTO cards (id, nid, did, ord, mod, usn, type, queue, due, ivl, factor, reps, lapses, left, odue, odid, flags, data)"
                     " values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     (idx, idx,  # same cid, did
-                     row['aid'],  # aid (cats id) as did
+                     deckId,
                      0,  # ord
                      now_sec(),
                      -1, 0, 0,
