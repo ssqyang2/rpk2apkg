@@ -107,7 +107,11 @@ class AnkiCollectionWriter:
         # Fix default .card's center align, which is ignored by jihu
         model['css'] += """.card {
     text-align: inherit!important;
-}"""
+}
+.answer {
+    text-align: inherit!important;
+}
+"""
         model['css'] = re.sub(r"\./(.*?\.png)", r'_\1', model['css'])
 
 
