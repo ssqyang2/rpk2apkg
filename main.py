@@ -87,7 +87,7 @@ class App:
             messagebox.showinfo(self.title, "转换成功！请打开 " + out_dir + " 查看生成的apkg文件")
         except Exception as e:
             messagebox.showerror(title, "**ERROR**\n" + str(
-                e) + "\n\n To check the complete traceback error log, please open the console.")
+                e) + "\n\n To check the complete traceback error log, please open the console. \n\n" + traceback.format_exc())
             sys.stderr.write(traceback.format_exc())
         finally:
             self.status = "清除临时文件"

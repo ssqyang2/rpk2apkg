@@ -6,6 +6,7 @@ from copy import deepcopy
 from anki_base import *
 from misc import *
 from util import *
+import re
 
 # logger = get_logger("AnkiCollectionWriter")
 
@@ -42,18 +43,73 @@ class AnkiCollectionWriter:
             c.execute("DELETE FROM col")
             c.commit()
 
-    def load_replace_model(self, type):
-        if type == "select":
-            model_path = "static/anki-awesome-select.json"
-            with open(resource_path(model_path), "r", encoding="utf-8") as f:
-                obj = json.load(f)
-            with open(resource_path("static/anki-awesome-select-afmt.html"), "r", encoding="utf-8") as f:
-                obj['tmpls'][0]['afmt'] = f.read()
-            with open(resource_path("static/anki-awesome-select-qfmt.html"), "r", encoding="utf-8") as f:
-                obj['tmpls'][0]['qfmt'] = f.read()
-            return obj
-        else:
-            raise Exception(f"Unknown type: {type}")
+    @staticmethod
+    def modify_model_for_choices(model):
+        tmpl = model['tmpls'][0]
+        tmpl['qfmt'] = re.sub(r"\[choice:(.*?)]", r'<div class="choice-option" data-opt="\1" onclick="onChoice(this)">\1. {{\1}}</div>', tmpl['qfmt'])
+        tmpl['qfmt'] += """
+        <script>
+    window.GF_ans = "{{answer}}"
+    window.GF_options = {}
+    window.GF_isMulti = window.GF_ans.length > 1
+    if (window.GF_isMulti) {
+        $(".select-type-tips").addClass("checkbox")
+    }
+    function onChoice(obj){
+        var opt = $(obj).attr('data-opt')
+        if (window.GF_options[opt] !== 1) {
+            if (!window.GF_isMulti) {
+                window.GF_options = {}
+                $(".choice-option").removeClass("select")
+            }
+            window.GF_options[opt] = 1
+            $(obj).addClass("select")
+        } else {
+            window.GF_options[opt] = 0
+            $(obj).removeClass("select")
+        }
+        console.log("window.GF_options", window.GF_options)
+    }
+</script>
+        """
+
+        tmpl['afmt'] = re.sub(r"\[choice:(.*?)]", r'<div class="choice-option" data-opt="\1">\1. {{\1}}</div>', tmpl['afmt'])
+        tmpl['afmt'] = tmpl['afmt'].replace('{{yourChoices}}', '<span class="yourChoices"></span>')
+        tmpl['afmt'] += """
+          <script>
+    window.GF_options = window.GF_options || {}
+    window.GF_ans = "{{answer}}"
+    window.GF_isMulti = window.GF_ans.length > 1
+    if (window.GF_isMulti) {
+        $(".select-type-tips").addClass("checkbox")
+    }
+
+    var yourChoices = ""
+    $(".choice-option").each(function(idx, obj) {
+        var opt = $(obj).attr('data-opt')
+        var isAnswer = window.GF_ans.indexOf(opt) > -1
+        var isSelected = window.GF_options[opt] === 1
+        if (isAnswer && isSelected) {
+            $(obj).addClass("correct")
+        } else if (isAnswer && !isSelected) {
+            $(obj).addClass("correct-not-selected")
+        } else if (!isAnswer && isSelected) {
+            $(obj).addClass("error")
+        } else if (!isAnswer && !isSelected) {
+        }
+        if (isSelected) {
+            yourChoices += opt
+        }
+    })
+    $(".yourChoices").text(yourChoices)
+</script>
+        """
+        # Fix default .card's center align, which is ignored by jihu
+        model['css'] += """.card {
+    text-align: inherit!important;
+}"""
+        model['css'] = re.sub(r"\./(.*?\.png)", r'_\1', model['css'])
+
 
     def get_decks(self):
         def get_deck_name(idx, child_name=None):
@@ -71,7 +127,7 @@ class AnkiCollectionWriter:
             deck_info['id'] = idx
             deck_info['name'] = get_deck_name(idx)
             decks[str(idx)] = deck_info
-        if self.insert_default_deck:
+        if self.insert_default_deck or len(decks) == 0:
             # 添加一个默认目录
             deck_info = deepcopy(BASE_DECK)
             deck_info['id'] = DEFAULT_DECK_ID
@@ -86,43 +142,44 @@ class AnkiCollectionWriter:
     def get_models(self):
         models = {}
         for idx, row in self.tpls_df.items():
-            if "选择" in row['name']:
-                model = self.load_replace_model("select")
+            model = deepcopy(BASE_MODEL)
+            model['name'] = row['name']
+            model['css'] += row['css']
+            for ord, f in enumerate(row['fields']):
+                field = deepcopy(BASE_FIELD)
+                field['name'] = f['name']
+                field['ord'] = ord
+                model['flds'].append(field)
+            tmpl = deepcopy(BASE_TMPL)
+            if "填空" in row['name']:
+                tmpl['qfmt'] = self.process_tmpl(row['front']).replace("{{问题}}", "{{cloze:问题}}")
+                tmpl['afmt'] = self.process_tmpl(row['back']).replace("{{问题}}", "{{cloze:问题}}")
             else:
-                model = deepcopy(BASE_MODEL)
-                model['name'] = row['name']
-                model['css'] += row['css']
+                tmpl['qfmt'] = self.process_tmpl(row['front'])
+                tmpl['afmt'] = self.process_tmpl(row['back'])
+            model['tmpls'].append(tmpl)
+
+            # handle double-sided cards
+            if len(row['front_back'].strip()) > 0:
+                model2 = deepcopy(BASE_MODEL)
+                model2['name'] = row['name'] + "_back"
+                model2['css'] += row['css_back']
+                # XXX: use N+1 as back's model id
+                model2['id'] = str(idx + 1)
                 for ord, f in enumerate(row['fields']):
                     field = deepcopy(BASE_FIELD)
                     field['name'] = f['name']
                     field['ord'] = ord
-                    model['flds'].append(field)
+                    model2['flds'].append(field)
                 tmpl = deepcopy(BASE_TMPL)
-                if "填空" in row['name']:
-                    tmpl['qfmt'] = self.process_tmpl(row['front']).replace("{{问题}}", "{{cloze:问题}}")
-                    tmpl['afmt'] = self.process_tmpl(row['back']).replace("{{问题}}", "{{cloze:问题}}")
-                else:
-                    tmpl['qfmt'] = self.process_tmpl(row['front'])
-                    tmpl['afmt'] = self.process_tmpl(row['back'])
-                model['tmpls'].append(tmpl)
+                tmpl['qfmt'] = self.process_tmpl(row['front_back'])
+                tmpl['afmt'] = self.process_tmpl(row['back_back'])
+                model2['tmpls'].append(tmpl)
+                models[str(idx + 1)] = model2
 
-                # handle double-sided cards
-                if len(row['front_back'].strip()) > 0:
-                    model2 = deepcopy(BASE_MODEL)
-                    model2['name'] = row['name'] + "_back"
-                    model2['css'] += row['css_back']
-                    # XXX: use N+1 as back's model id
-                    model2['id'] = str(idx + 1)
-                    for ord, f in enumerate(row['fields']):
-                        field = deepcopy(BASE_FIELD)
-                        field['name'] = f['name']
-                        field['ord'] = ord
-                        model2['flds'].append(field)
-                    tmpl = deepcopy(BASE_TMPL)
-                    tmpl['qfmt'] = self.process_tmpl(row['front_back'])
-                    tmpl['afmt'] = self.process_tmpl(row['back_back'])
-                    model2['tmpls'].append(tmpl)
-                    models[str(idx + 1)] = model2
+            if '[choice:A]' in model['tmpls'][0]['qfmt']:
+                # 处理选择题的特殊格式
+                AnkiCollectionWriter.modify_model_for_choices(model)
 
             model['id'] = str(idx)
             models[str(idx)] = model

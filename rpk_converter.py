@@ -7,6 +7,7 @@ import zipfile
 from collections import OrderedDict
 import requests
 from multiprocessing.pool import ThreadPool
+from util import resource_path
 
 from anki_collection_writer import AnkiCollectionWriter
 
@@ -132,6 +133,10 @@ class RpkConverter:
             filename = media_list[i]
             os.rename(f"{self.media_files_path}/{filename}", f"{self.media_files_path}/{i}")
             media_dict[f"{i}"] = filename
+        for f in ['icon-correct.png', 'icon-correct-2.png', 'icon-correct-not-selected.png', 'icon-error.png', 'icon-error-2.png']:
+            i = len(media_dict)
+            shutil.copyfile(resource_path(f"static/{f}"), f"{self.media_files_path}/{i}")
+            media_dict[f"{i}"] = "_" + f
         json.dump(media_dict, open(f"{self.apkg_tmp_dir}/media", "w"))
 
     def pack_apkg(self):
