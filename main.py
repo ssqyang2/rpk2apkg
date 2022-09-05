@@ -42,6 +42,7 @@ class App:
 
     def select_rpk_file_path(self):
         input_path = filedialog.askopenfilename()
+        input_path = os.path.normpath(input_path)
         if not input_path:
             return
         if not input_path.endswith(".rpk"):
@@ -49,7 +50,7 @@ class App:
             return
         self.rpk_file_path.set(input_path)
         if self.out_dir.get().__len__() == 0 and len(input_path) > 0:
-            self.out_dir.set(os.path.dirname(input_path))
+            self.out_dir.set(os.path.normpath(os.path.dirname(input_path)))
 
     def select_out_dir(self):
         self.out_dir.set(filedialog.askdirectory())
@@ -62,14 +63,15 @@ class App:
         thread_count.start()
 
     def run_convert(self):
-        rpk_file_path = self.rpk_file_path.get().replace("\\", "/")
-        out_dir = self.out_dir.get().replace("\\", "/")
+        rpk_file_path = self.rpk_file_path.get()
+        out_dir = self.out_dir.get()
         sqlite_path = resource_path("static/template.sqlite3")
         if not out_dir:
-            out_dir = os.getcwd().replace("\\", "/")
+            out_dir = os.getcwd()
 
         message_stdout.clear()
         converter = RpkConverter(rpk_file_path, out_dir, sqlite_path)
+        out_dir = os.path.normpath(out_dir)
         try:
             self.status = "正在解析RPK文件(解压缩)"
             converter.read_rpk()
@@ -85,6 +87,8 @@ class App:
             self.status = "正在生成apkg文件(打包为apkg)"
             converter.pack_apkg()
             messagebox.showinfo(self.title, "转换成功！请打开 " + out_dir + " 查看生成的apkg文件")
+            if os.name == 'nt':
+                os.system(f'explorer.exe /select,"{converter.get_out_file_path()}"')
         except Exception as e:
             messagebox.showerror(title, "**ERROR**\n" + str(
                 e) + "\n\n To check the complete traceback error log, please open the console. \n\n" + traceback.format_exc())

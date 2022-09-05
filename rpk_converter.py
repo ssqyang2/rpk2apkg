@@ -141,16 +141,19 @@ class RpkConverter:
 
     def pack_apkg(self):
         logging.info("Packing into apkg file")
-        zipf = zipfile.ZipFile(f"{self.out_dir}/{self.filename}.apkg", 'w', zipfile.ZIP_DEFLATED)
+        out_path = self.get_out_file_path()
+        zipf = zipfile.ZipFile(out_path, 'w', zipfile.ZIP_DEFLATED)
         zipf.write(f"{self.apkg_tmp_dir}/media", "media")
         zipf.write(self.sqlite_path, "collection.anki2")
         media_list = os.listdir(self.media_files_path) if os.path.exists(self.media_files_path) else []
         for media_file in media_list:
             zipf.write(f"{self.media_files_path}/{media_file}", media_file)
         zipf.close()
-        done_message = f"转换成功！输出文件在 {self.out_dir}/{self.filename}.apkg \n 你可以选择下一个文件进行转换。"
+        done_message = f"转换成功！输出文件在 {out_path} \n 你可以选择下一个文件进行转换。"
         logging.info(done_message)
-        print(done_message)
+
+    def get_out_file_path(self):
+        return os.path.normpath(os.path.join(self.out_dir, self.filename + ".apkg"))
 
     def clear_tmp_files(self):
         logging.info("Deleting temp files")

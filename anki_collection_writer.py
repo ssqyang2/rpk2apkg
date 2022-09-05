@@ -46,7 +46,9 @@ class AnkiCollectionWriter:
     @staticmethod
     def modify_model_for_choices(model):
         tmpl = model['tmpls'][0]
-        tmpl['qfmt'] = re.sub(r"\[choice:(.*?)]", r'<div class="choice-option" data-opt="\1" onclick="onChoice(this)">\1. {{\1}}</div>', tmpl['qfmt'])
+        tmpl['qfmt'] = re.sub(r"\[choice:(.*?)]",
+                              r'<div class="choice-option" data-opt="\1" onclick="onChoice(this)">\1. {{\1}}</div>',
+                              tmpl['qfmt'])
         tmpl['qfmt'] += """
         <script>
     window.GF_ans = "{{answer}}"
@@ -54,6 +56,11 @@ class AnkiCollectionWriter:
     window.GF_isMulti = window.GF_ans.length > 1
     if (window.GF_isMulti) {
         $(".select-type-tips").addClass("checkbox")
+    }
+    var optE = $("[data-opt=E]")
+    if (optE.text().trim().length == 2) {
+        // Hide empty option E
+        optE.hide()
     }
     function onChoice(obj){
         var opt = $(obj).attr('data-opt')
@@ -73,7 +80,8 @@ class AnkiCollectionWriter:
 </script>
         """
 
-        tmpl['afmt'] = re.sub(r"\[choice:(.*?)]", r'<div class="choice-option" data-opt="\1">\1. {{\1}}</div>', tmpl['afmt'])
+        tmpl['afmt'] = re.sub(r"\[choice:(.*?)]", r'<div class="choice-option" data-opt="\1">\1. {{\1}}</div>',
+                              tmpl['afmt'])
         tmpl['afmt'] = tmpl['afmt'].replace('{{yourChoices}}', '<span class="yourChoices"></span>')
         tmpl['afmt'] += """
           <script>
@@ -83,7 +91,11 @@ class AnkiCollectionWriter:
     if (window.GF_isMulti) {
         $(".select-type-tips").addClass("checkbox")
     }
-
+    var optE = $("[data-opt=E]")
+    if (optE.text().trim().length == 2) {
+        // Hide empty option E
+        optE.hide()
+    }
     var yourChoices = ""
     $(".choice-option").each(function(idx, obj) {
         var opt = $(obj).attr('data-opt')
@@ -108,12 +120,13 @@ class AnkiCollectionWriter:
         model['css'] += """.card {
     text-align: inherit!important;
 }
-.answer {
-    text-align: inherit!important;
-}
 """
         model['css'] = re.sub(r"\./(.*?\.png)", r'_\1', model['css'])
-
+        # class answer to GF_answer, to avoid conflict with Anki
+        model['css'] = re.sub(r"\.answer", '.GF_answer', model['css'])
+        tmpl['afmt'] = tmpl['afmt'] \
+            .replace("class='answer", "class='GF_answer") \
+            .replace("class=\"answer", "class=\"GF_answer")
 
     def get_decks(self):
         def get_deck_name(idx, child_name=None):
@@ -217,8 +230,8 @@ class AnkiCollectionWriter:
         # insert fields according to static/anki-awesome-select.json
         if model['name'] == "AwesomeSelect-3.x":
             fields = [
-                str(idx), # id
-                convert_to_apkg_format(fields_dict.get("question")) # question
+                str(idx),  # id
+                convert_to_apkg_format(fields_dict.get("question"))  # question
             ]
             # options
             options = []
